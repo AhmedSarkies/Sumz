@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
 import { copy, linkIcon, loader, tick } from "../assets";
-import { fetchArticles } from "../store/slices/articleSlice";
+import { useLazyGetSummaryQuery } from "../services/articleApi";
 
 const Demo = () => {
-  const dispatch = useDispatch();
-  const { data, loading, error } = useSelector((state) => state.article);
+  const [getSummary, { error, isFetching }] = useLazyGetSummaryQuery();
   const [article, setArticle] = useState({
     url: "",
     summary: "",
@@ -23,15 +22,11 @@ const Demo = () => {
     }
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(fetchArticles(article.url));
+    const { data } = await getSummary({ articleUrl: article.url });
     if (data?.summary) {
-      const newArticle = {
-        ...article,
-        summary: data.summary,
-        url: article.url,
-      };
+      const newArticle = { ...article, summary: data.summary };
       const updatedAllArticles = [newArticle, ...allArticles];
       setArticle(newArticle);
       setAllArticles(updatedAllArticles);
@@ -102,7 +97,7 @@ const Demo = () => {
       </div>
       {/* Display Results */}
       <div className="my-10 max-w-full flex justify-center items-center">
-        {loading ? (
+        {isFetching ? (
           <img src={loader} alt="loader" className="w-20 h-20 object-contain" />
         ) : error ? (
           <p className="font-inter font-bold text-black text-center">
